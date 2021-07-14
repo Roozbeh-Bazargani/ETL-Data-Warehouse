@@ -1,22 +1,9 @@
-CREATE TABLE Book
+CREATE TABLE Author
 (
-	book_id INTEGER NOT NULL,
-	ISBN INTEGER NOT NULL,
-	title CHAR(40) NOT NULL,
-	description CHAR(100),
-	edition INTEGER,
-	published_date DATE,
-	publisher CHAR(40),
-	PRIMARY KEY (book_id),
-	UNIQUE (title, ISBN)
-);
-
-CREATE TABLE Writer
-(
-	writer_id INTEGER NOT NULL,
+	author_id INTEGER NOT NULL,
 	last_name CHAR(20) NOT NULL,
 	first_name CHAR(20),
-	PRIMARY KEY (writer_id)
+	PRIMARY KEY (author_id)
 );
 
 CREATE TABLE Translator
@@ -40,6 +27,24 @@ CREATE TABLE Genre
 	PRIMARY KEY (genre)
 );
 
+CREATE TABLE Book
+(
+	ISBN INTEGER NOT NULL,
+	number_available INTEGER NOT NULL,
+	title CHAR(40) NOT NULL,
+	description CHAR(100),
+	edition INTEGER,
+	published_date DATE,
+	publisher CHAR(40),
+	main_author INTEGER NOT NULL,
+	main_language CHAR(20) NOT NULL,
+	main_genre CHAR(20) NOT NULL,
+	PRIMARY KEY (ISBN),
+	FOREIGN KEY (main_author) REFERENCES Author,
+	FOREIGN KEY (main_language) REFERENCES Languageb,
+	FOREIGN KEY (main_genre) REFERENCES GENRE
+);
+
 CREATE TABLE User_library
 (
 	user_id INTEGER NOT NULL,
@@ -56,10 +61,10 @@ CREATE TABLE User_library
 CREATE TABLE Written_by
 (
 	written_id INTEGER NOT NULL,
-	writer_id INTEGER NOT NULL,
+	author_id INTEGER NOT NULL,
 	book_id INTEGER NOT NULL,
 	PRIMARY KEY (written_id),
-	FOREIGN KEY (writer_id) REFERENCES Writer,
+	FOREIGN KEY (author_id) REFERENCES Author,
 	FOREIGN KEY (book_id) REFERENCES Book
 );
 
@@ -101,6 +106,7 @@ CREATE TABLE Borrowed
 	user_id INTEGER NOT NULL,
 	book_id INTEGER NOT NULL,
 	deadline DATE NOT NULL,
+	number_books INTEGER NOT NULL,
 	borrowed_date DATE,
 	returned_date DATE,
 	PRIMARY KEY (borrowed_id),
@@ -111,4 +117,45 @@ CREATE TABLE Borrowed
 
 
 
+CREATE FUNCTION borrow_book() RETURNS trigger AS $borrow_book$
+    BEGIN
+        IF (TG_OP = 'INSERT') THEN
+			IF (NEW.number_books > (SELECT number_available
+								   FROM Book
+								   WHERE NEW.book_id=ISBN)) THEN
+				RETURN OLD;
+			ELSE
+				UPDATE Book
+				SET number_available = number_available - NEW.number_books
+				WHERE ISBN = NEW.book_id;
+			END IF;
+		ELSEIF (TG_OP = 'UPDATE') THEN
+			IF (OLD.returned_date IS NULL AND NEW.returned_date IS NOT NULL) THEN
+				UPDATE Book
+				SET number_available = number_available + OLD.number_books
+				WHERE ISBN = OLD.book_id;
+			END IF;
+        END IF;
+        RETURN NEW; -- result is ignored since this is an AFTER trigger
+    END;
+$borrow_book$ LANGUAGE plpgsql;
 
+CREATE TRIGGER borrow_book BEFORE INSERT OR UPDATE ON Borrowed
+    FOR EACH ROW EXECUTE FUNCTION borrow_book();
+	
+	
+	
+	
+CREATE FUNCTION borrow_book_a() RETURNS trigger AS $borrow_book_a$
+    BEGIN
+        IF (TG_OP = 'DELETE') THEN
+            UPDATE Book
+			SET number_available = number_available + OLD.number_books
+			WHERE ISBN = OLD.book_id;
+        END IF;
+        RETURN NULL; -- result is ignored since this is an AFTER trigger
+    END;
+$borrow_book_a$ LANGUAGE plpgsql;
+
+CREATE TRIGGER borrow_book_a AFTER DELETE ON Borrowed
+    FOR EACH ROW EXECUTE FUNCTION borrow_book_a();
