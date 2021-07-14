@@ -1,17 +1,9 @@
-CREATE TABLE Author
+CREATE TABLE Person
 (
-	author_id INTEGER NOT NULL,
+	person_id INTEGER NOT NULL,
 	last_name CHAR(20) NOT NULL,
 	first_name CHAR(20),
-	PRIMARY KEY (author_id)
-);
-
-CREATE TABLE Translator
-(
-	translator_id INTEGER NOT NULL,
-	last_name CHAR(20) NOT NULL,
-	first_name CHAR(20),
-	PRIMARY KEY (translator_id)
+	PRIMARY KEY (person_id)
 );
 
 
@@ -40,7 +32,7 @@ CREATE TABLE Book
 	main_language CHAR(20) NOT NULL,
 	main_genre CHAR(20) NOT NULL,
 	PRIMARY KEY (ISBN),
-	FOREIGN KEY (main_author) REFERENCES Author,
+	FOREIGN KEY (main_author) REFERENCES Person,
 	FOREIGN KEY (main_language) REFERENCES Languageb,
 	FOREIGN KEY (main_genre) REFERENCES GENRE
 );
@@ -48,33 +40,35 @@ CREATE TABLE Book
 CREATE TABLE User_library
 (
 	user_id INTEGER NOT NULL,
-	last_name CHAR(40) NOT NULL,
-	first_name CHAR(40),
+	person_id INTEGER NOT NULL,
 	birth_date DATE,
 	register_date DATE,
 	register_number INTEGER,
 	telephone INTEGER,
 	address CHAR(200),
-	PRIMARY KEY (user_id)
+	PRIMARY KEY (user_id),
+	FOREIGN KEY (person_id) REFERENCES Person
 );
+
+
 
 CREATE TABLE Written_by
 (
 	written_id INTEGER NOT NULL,
-	author_id INTEGER NOT NULL,
+	person_id INTEGER NOT NULL,
 	book_id INTEGER NOT NULL,
 	PRIMARY KEY (written_id),
-	FOREIGN KEY (author_id) REFERENCES Author,
+	FOREIGN KEY (person_id) REFERENCES Person,
 	FOREIGN KEY (book_id) REFERENCES Book
 );
 
 CREATE TABLE Translated_by
 (
 	translated_id INTEGER NOT NULL,
-	translator_id INTEGER NOT NULL,
+	person_id INTEGER NOT NULL,
 	book_id INTEGER NOT NULL,
 	PRIMARY KEY (translated_id),
-	FOREIGN KEY (translator_id) REFERENCES Translator,
+	FOREIGN KEY (person_id) REFERENCES Person,
 	FOREIGN KEY (book_id) REFERENCES Book
 );
 
@@ -130,10 +124,19 @@ CREATE FUNCTION borrow_book() RETURNS trigger AS $borrow_book$
 				WHERE ISBN = NEW.book_id;
 			END IF;
 		ELSEIF (TG_OP = 'UPDATE') THEN
-			IF (OLD.returned_date IS NULL AND NEW.returned_date IS NOT NULL) THEN
+			IF (NEW.number_books - OLD.number_books > (SELECT number_available
+								   FROM Book
+								   WHERE NEW.book_id=ISBN)) THEN
+				RETURN OLD;
+			ELSE
 				UPDATE Book
-				SET number_available = number_available + OLD.number_books
+				SET number_available = number_available + OLD.number_books - NEW.number_books
 				WHERE ISBN = OLD.book_id;
+				IF (OLD.returned_date IS NULL AND NEW.returned_date IS NOT NULL) THEN
+					UPDATE Book
+					SET number_available = number_available + OLD.number_books
+					WHERE ISBN = OLD.book_id;
+				END IF;
 			END IF;
         END IF;
         RETURN NEW; -- result is ignored since this is an AFTER trigger
@@ -149,9 +152,11 @@ CREATE TRIGGER borrow_book BEFORE INSERT OR UPDATE ON Borrowed
 CREATE FUNCTION borrow_book_a() RETURNS trigger AS $borrow_book_a$
     BEGIN
         IF (TG_OP = 'DELETE') THEN
-            UPDATE Book
-			SET number_available = number_available + OLD.number_books
-			WHERE ISBN = OLD.book_id;
+			IF (OLD.returned_date IS NULL) THEN
+				UPDATE Book
+				SET number_available = number_available + OLD.number_books
+				WHERE ISBN = OLD.book_id;
+			END IF;
         END IF;
         RETURN NULL; -- result is ignored since this is an AFTER trigger
     END;
