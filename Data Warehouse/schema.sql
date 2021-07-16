@@ -166,13 +166,7 @@ CREATE TABLE Book_old
 	insert_date DATE NOT NULL,
 	change_date DATE NOT NULL,
 	change CHNG NOT NULL,
-	main_author_date DATE NOT NULL,
-	main_language_date DATE NOT NULL,
-	main_genre_date DATE NOT NULL,
-	PRIMARY KEY (ISBN, change_date),
-	FOREIGN KEY (main_author, main_author_date) REFERENCES Person_old,
-	FOREIGN KEY (main_language, main_language_date) REFERENCES Languageb_old,
-	FOREIGN KEY (main_genre, main_genre_date) REFERENCES GENRE_old
+	PRIMARY KEY (ISBN, change_date)
 );
 
 CREATE TABLE User_library_old
@@ -187,9 +181,7 @@ CREATE TABLE User_library_old
 	insert_date DATE NOT NULL,
 	change_date DATE NOT NULL,
 	change CHNG NOT NULL,
-	person_id_date DATE NOT NULL,
-	PRIMARY KEY (user_id, change_date),
-	FOREIGN KEY (person_id, person_id_date) REFERENCES Person_old
+	PRIMARY KEY (user_id, change_date)
 );
 
 
@@ -202,11 +194,7 @@ CREATE TABLE Written_by_old
 	insert_date DATE NOT NULL,
 	change_date DATE NOT NULL,
 	change CHNG NOT NULL,
-	person_id_date DATE NOT NULL,
-	book_id_date DATE NOT NULL,
-	PRIMARY KEY (written_id, change_date),
-	FOREIGN KEY (person_id, person_id_date) REFERENCES Person_old,
-	FOREIGN KEY (book_id, book_id_date) REFERENCES Book_old
+	PRIMARY KEY (written_id, change_date)
 );
 
 CREATE TABLE Translated_by_old
@@ -217,11 +205,7 @@ CREATE TABLE Translated_by_old
 	insert_date DATE NOT NULL,
 	change_date DATE NOT NULL,
 	change CHNG NOT NULL,
-	person_id_date DATE NOT NULL,
-	book_id_date DATE NOT NULL,
-	PRIMARY KEY (translated_id, change_date),
-	FOREIGN KEY (person_id, person_id_date) REFERENCES Person_old,
-	FOREIGN KEY (book_id, book_id_date) REFERENCES Book_old
+	PRIMARY KEY (translated_id, change_date)
 );
 
 
@@ -233,11 +217,7 @@ CREATE TABLE Language_book_old
 	insert_date DATE NOT NULL,
 	change_date DATE NOT NULL,
 	change CHNG NOT NULL,
-	book_id_date DATE NOT NULL,
-	languageb_date DATE NOT NULL,
-	PRIMARY KEY (lb_id, change_date),
-	FOREIGN KEY (languageb, languageb_date) REFERENCES Languageb_old,
-	FOREIGN KEY (book_id, book_id_date) REFERENCES Book_old
+	PRIMARY KEY (lb_id, change_date)
 );
 
 
@@ -249,11 +229,7 @@ CREATE TABLE Genre_book_old
 	insert_date DATE NOT NULL,
 	change_date DATE NOT NULL,
 	change CHNG NOT NULL,
-	book_id_date DATE NOT NULL,
-	genre_date DATE NOT NULL,
-	PRIMARY KEY (gb_id, change_date),
-	FOREIGN KEY (genre, genre_date) REFERENCES Genre_old,
-	FOREIGN KEY (book_id, book_id_date) REFERENCES Book_old
+	PRIMARY KEY (gb_id, change_date)
 );
 
 CREATE TABLE Borrowed_old
@@ -268,11 +244,7 @@ CREATE TABLE Borrowed_old
 	insert_date DATE NOT NULL,
 	change_date DATE NOT NULL,
 	change CHNG NOT NULL,
-	user_id_date DATE NOT NULL,
-	book_id_date DATE NOT NULL,
-	PRIMARY KEY (borrowed_id, change_date),
-	FOREIGN KEY (user_id, user_id_date) REFERENCES User_library_old,
-	FOREIGN KEY (book_id, book_id_date) REFERENCES Book_old
+	PRIMARY KEY (borrowed_id, change_date)
 );
 
 
